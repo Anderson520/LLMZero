@@ -1,0 +1,11 @@
+Given the provided state, give the action
+
+```plaintext
+Optimal action: [action]
+```
+
+Where the action is one of:
+- `nothing`
+- `move`
+- `open door`
+- `close door`

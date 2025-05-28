@@ -1,0 +1,268 @@
+Predict the estimated value of the current state in the context of a household modeled as a Partially Observable Markov Decision Process (POMDP). The task is to locate specific objects and place them in designated receptacles throughout the house. The estimated value of a state is based on the future rewards obtainable from that state.
+
+# State Representation
+The household environment is composed of:
+
+1. **Objects**: Common items that can be moved, such as books, pens, or clocks.
+2. **Receptacles**: Furniture or locations that contain or support objects, either inside or on top (e.g., desk, drawer, shelf).
+3. **Goal**: A goal specifies placing an object into a location, formatted as: "Put {object} on/in {receptacle}."
+
+A state-action trajectory is provided to deduce context. Your objective is to predict the reward for the most recent state.
+
+Key details:
+- Items are uniquely identified, e.g., "book 1" or "pen 2".
+- Some items are hidden; they must be revealed by interacting with a container.
+- Agents only see entities in their immediate vicinity.
+
+# Valid State Formats
+Here are valid descriptions of states. Words inside `{}` should be replaced by actual entities:
+
+- "You arrive at {receptacle}. On the {receptacle}, you see {objects}."
+- "You arrive at {receptacle}. On the {receptacle}, you see nothing."
+- "You arrive at {receptacle}. The {receptacle} is closed."
+- "You arrive at {receptacle}. The {receptacle} is open. In it, you see {objects}."
+- "You open the {receptacle}. The {receptacle} is open. In it, you see {objects}."
+- "You pick up the {object} from the {receptacle}."
+- "You are in the middle of a room. Looking quickly around you, you see {receptacles}."
+- "Nothing happens."
+
+# Reward Calculation Rules
+
+1. Reward is 1 if the goal condition is met, otherwise a penalty of -0.1 is applied for each step.
+2. The value of a state is computed as: **Value = 1 - (remaining_steps * 0.1)**.
+
+# Steps to Compute Value
+
+1. **Check if the goal is achieved** in the latest state:
+   - If yes, `FINAL_VALUE = 1`.
+2. **Is the target object picked up?** If yes, check if the agent is at the target location:
+   - If yes, `FINAL_VALUE = 0.9` (ready to place the object).
+   - If not, `FINAL_VALUE = 0.8` (need to move and place).
+3. **Is the target object visible in the latest state?**
+   - If yes, `FINAL_VALUE = 0.7` (pick up, move, and place).
+4. **Was the target object seen before, but isn't visible now?**
+   - If yes, `FINAL_Value = 0.6` (go, pick up, move, and place).
+5. **If the object has not been found yet, calculate based on search information:**
+   - Set `FINAL_VALUE = min(0.05 * (unique states visited), 0.5)`.
+
+# Output Format
+
+Provide the steps taken and the final value in the following format:
+
+[Steps]
+
+```plaintext
+FINAL_VALUE=[number]
+```
+
+# Examples
+
+**Example 1**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a alarmclock in desk.
+Action: go to desk 1
+
+State: You arrive at desk 1. On the desk 1, you see a book 2, a bowl 1, a cd 3, a pencil 2, a pencil 1, and a remotecontrol 1.
+
+**Steps**:
+1. The task is to put an alarm clock in the desk. The goal is not reached. Move to step 2.
+2. The target object (alarmclock) has not been picked up yet by the agent. Move to step 3.
+3. The target object is not visible in the latest state. Move to step 4.
+4. The target object has not yet been seen in any previous state. Move to step 5.
+5. The agent has visited 2 unique states: the initial state in the middle of the room and the state at desk 1.
+
+Calculating the value based on the number of unique states visited:
+- Value = min(0.05 * (2 unique states), 0.5) = min(0.1, 0.5) = 0.1.
+
+```plaintext
+FINAL_VALUE=0.1
+```
+
+**Example 2**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a alarmclock in desk.
+Action: go to sidetable 1
+
+State: You arrive at sidetable 1. On the sidetable 1, you see a alarmclock 3, a alarmclock 2, a alarmclock 1, a creditcard 1, a desklamp 1, a keychain 1, a pen 3, a pen 2, and a pencil 3.
+
+**Steps**:
+1. The task is to put an alarm clock in the desk. The goal is not reached since the object has not been placed yet. Move to step 2.
+2. The target object (alarmclock) has not been picked up yet by the agent. Move to step 3.
+3. The target object is visible in the latest state (alarmclock 1, alarmclock 2, alarmclock 3). Therefore, the value is based on being able to pick it up, move it, and place it: FINAL_VALUE = 0.7.
+   
+```plaintext
+FINAL_VALUE=0.7
+```
+
+**Example 3**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a alarmclock in desk.
+Action: go to sidetable 1
+
+State: You arrive at loc 20. On the sidetable 1, you see a alarmclock 3, a alarmclock 2, a alarmclock 1, a creditcard 1, a desklamp 1, a keychain 1, a pen 3, a pen 2, and a pencil 3.
+Action: take alarmclock 1 from sidetable 1
+
+State: You pick up the alarmclock 1 from the sidetable 1.
+
+**Steps**:
+1. The task is to put an alarm clock in the desk. The goal is not reached as the object has not been placed yet. Move to step 2.
+2. The target object (alarmclock) has been picked up by the agent. The agent is not currently at the target location (desk) where the object should be placed. Therefore, the value is assessed as needing to move and place the item: FINAL_VALUE = 0.8.
+
+```plaintext
+FINAL_VALUE=0.8
+```
+
+**Example 4**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a alarmclock in desk.
+Action: go to sidetable 1
+
+State: You arrive at loc 20. On the sidetable 1, you see a alarmclock 3, a alarmclock 2, a alarmclock 1, a creditcard 1, a desklamp 1, a keychain 1, a pen 3, a pen 2, and a pencil 3.
+Action: take alarmclock 1 from sidetable 1
+
+State: You pick up the alarmclock 1 from the sidetable 1.
+Action: go to desk 1
+
+State: You arrive at loc 1. On the desk 1, you see a book 2, a bowl 1, a cd 3, a pencil 2, a pencil 1, and a remotecontrol 1.
+
+**Steps**:
+1. The task is to put an alarm clock in the desk. The goal is not reached since the object has not been placed yet. Move to step 2.
+2. The target object (alarmclock) has been picked up by the agent. The agent is currently at the desk location where the object should be placed. Therefore, the value is assessed as ready to place the object: FINAL_VALUE = 0.9.
+
+```plaintext
+FINAL_VALUE=0.9
+```
+
+**Example 5**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a alarmclock in desk.
+Action: go to sidetable 1
+
+State: You arrive at loc 20. On the sidetable 1, you see a alarmclock 3, a alarmclock 2, a alarmclock 1, a creditcard 1, a desklamp 1, a keychain 1, a pen 3, a pen 2, and a pencil 3.
+Action: take alarmclock 1 from sidetable 1
+
+State: You pick up the alarmclock 1 from the sidetable 1.
+Action: go to desk 1
+
+State: You arrive at loc 1. On the desk 1, you see a book 2, a bowl 1, a cd 3, a pencil 2, a pencil 1, and a remotecontrol 1.
+Action: put alarmclock 1 in/on desk 1
+
+State: You put the alarmclock 1 in/on the desk 1.
+
+**Steps**:
+1. The task is to put an alarm clock in the desk. The goal condition is met as the object has been placed in the designated receptacle. As the goal is achieved, the final value is: `FINAL_VALUE = 1`.
+
+```plaintext
+FINAL_VALUE=1
+```
+
+**Example 6**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 2, a drawer 1, a garbagecan 1, a shelf 8, a shelf 7, a shelf 6, a shelf 5, a shelf 4, a shelf 3, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a book in bed.
+Action: go to desk 1
+
+State: You arrive at desk 1. On the desk 1, you see a book 1.
+Action: go to bed 1
+
+State: You arrive at bed 1. On the bed 1, you see a laptop 1, a pillow 2, and a pillow 1.
+Action: go to desk 1
+
+State: You arrive at desk 1. On the desk 1, you see a book 1.
+Action: go to desk 1
+
+State: Nothing happens.
+
+**Steps**:
+1. The task is to put a book in the bed. The goal condition is not met since the object has not been placed yet. Move to step 2.
+2. The target object (book) has not been picked up yet by the agent. Move to step 3.
+3. The target object is visible in the latest state (book 1 on desk 1). Therefore, value is based on being able to pick it up, move it, and place it: FINAL_VALUE = 0.7.
+
+```plaintext
+FINAL_VALUE=0.7
+```
+
+**Example 7**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 2, a drawer 1, a garbagecan 1, a shelf 8, a shelf 7, a shelf 6, a shelf 5, a shelf 4, a shelf 3, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a book in bed.
+Action: go to desk 1
+
+State: You arrive at desk 1. On the desk 1, you see a book 1.
+Action: go to bed 1
+
+State: You arrive at bed 1. On the bed 1, you see a laptop 1, a pillow 2, and a pillow 1.
+
+**Steps**:
+1. The task is to put a book in the bed. The goal is not reached since the object has not been placed yet. Move to step 2.
+2. The target object (book) has not been picked up yet by the agent. Move to step 3.
+3. The target object is not visible in the latest state (bed 1). Move to step 4.
+4. The target object has been seen in a previous state on desk 1. Therefore, the value is based on the actions: go to desk 1, pick up book 1, go to bed 1, place it: FINAL_VALUE = 0.6.
+
+```plaintext
+FINAL_VALUE=0.6
+```
+
+**Example 8**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bathtubbasin 1, a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a countertop 1, a drawer 4, a drawer 3, a drawer 2, a drawer 1, a dresser 1, a garbagecan 1, a handtowelholder 1, a sinkbasin 2, a sinkbasin 1, a toilet 1, a toiletpaperhanger 1, and a towelholder 1.
+
+Your task is to: put a candle in toilet.
+Action: go to bathtubbasin 1
+
+
+State: You arrive at loc 17. On the bathtubbasin 1, you see a cloth 1.
+Action: go to bathtubbasin 1
+
+
+State: Nothing happens.
+Action: go to cabinet 1
+
+
+State: You arrive at loc 11. The cabinet 1 is closed.
+Action: open cabinet 1
+
+
+State: You open the cabinet 1. The cabinet 1 is open. In it, you see a soapbar 2.
+Action: go to bathtubbasin 1
+
+
+State: You arrive at loc 17. On the bathtubbasin 1, you see a cloth 1.
+
+**Steps**:
+1. The task is to put a candle in the toilet. The goal is not reached. Move to step 2.
+2. The target object (candle) has not been picked up yet by the agent. Move to step 3.
+3. The target object is not visible in the latest state. Move to step 4.
+4. The target object has not yet been seen in any previous state. Move to step 5.
+5. The agent has visited 4 unique states: the initial state in the middle of the room, the state at bathdubbasin 1 and the state of cabinet 1 (closed), the state of cabinet 1 (opened).
+
+Calculating the value based on the number of unique states visited:
+- Value = min(0.05 * (4 unique states), 0.5) = min(0.2, 0.5) = 0.2
+
+```plaintext
+FINAL_VALUE=0.2
+```
+
+# Notes
+- Follow the steps used to calculate the final value.
+- A state is only considered unique if it is being visited for the first time. States where "Nothing happens." or going back to a previously visited state is **not** considered a unique state.

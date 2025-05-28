@@ -1,0 +1,203 @@
+Provide an estimated reward of the current state and whether it is a terminal state in the context of a household modeled as a Partially Observable Markov Decision Process (POMDP). The system involves searching for specific items and placing them in designated locations within the house.
+
+# State Representation
+The household environment is composed of two types of entities:
+
+1. **Objects**: These are common household items that can be picked up or put down (e.g., book, pen, alarm clock).
+2. **Receptacles**: These are household furniture treated as destinations for placing objects. They can contain items either on top or inside (e.g., armchair, desk, drawer, shelf).
+3. **Goal**: The goal is a description of the task in the format: "Put {object} on/in {receptacle}."
+
+You will be given a state-action trajectory to infer context information. Predict only the reward for the latest state.
+
+Key characteristics:
+- Every item is uniquely numbered (e.g., chair 1, drawer 1, book 1, pen 2) to avoid ambiguity.
+- Objects may be visible or hidden. Visible objects are observed directly, while hidden objects are revealed by interacting with their containing receptacle.
+- Some receptacles can be treated as objects (e.g., vases can hold other items but can also be picked up).
+
+The agent only observes entities within its immediate vicinity and cannot access the complete household layout.
+
+# Valid State Formats
+Below are the valid templates used to describe states. Replace words inside curly brackets `{}` with specific entities:
+
+- "You arrive at {receptacle}. On the {receptacle}, you see {objects}."
+- "You arrive at {receptacle}. On the {receptacle}, you see nothing."
+- "You arrive at {receptacle}. The {receptacle} is closed."
+- "You arrive at {receptacle}. The {receptacle} is open. In it, you see {objects}."
+- "You open the {receptacle}. The {receptacle} is open. In it, you see {objects}."
+- "You pick up the {object} from the {receptacle}."
+- "You are in the middle of a room. Looking quickly around you, you see {receptacles}."
+- "Nothing happens."
+
+# Steps to Compute Reward
+
+1. Check if the current state satisfy the goal. If yes, TOTAL_REWARD_FINAL=1 and IS_TERMINAL=True. Otherwise, IS_TERMINAL=False an go to step 2.
+2. Check if the target object is picked up at the **latest state**. If yes, TOTAL_REWARD_FINAL=-0.01. Otherwise, go to step 3.
+3. Check if the target object has been discovered at the **latest state**. If yes, TOTAL_REWARD_FINAL=-0.05. Otherwise, TOTAL_REWARD_FINAL=-0.1.
+
+
+# Output Format
+
+Provide the steps taken and the final output in the following format:
+
+[Steps]
+
+```plaintext
+TOTAL_REWARD_FINAL=[number]
+IS_TERMINAL=[True or False]
+```
+
+# Examples
+
+**Example 1**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a alarmclock in desk.
+Action: go to desk 1
+
+State: You arrive at desk 1. On the desk 1, you see a book 2, a bowl 1, a cd 3, a pencil 2, a pencil 1, and a remotecontrol 1.
+
+**Steps**:
+1. The goal is to put **alarmclock** in **desk**. The alarmclock is not in the desk. Goal not reached, IS_TERMINAL=False. Move to step 2.
+2. We did not pick up the **alarmclock** in the latest state. Move to step 3.
+3. **alarmclock** is not discovered in the latest state. TOTAL_REWARD_FINAL=-0.1.
+
+**Output 1**:
+```plaintext
+TOTAL_REWARD_FINAL=-0.1
+IS_TERMINAL=False
+```
+
+**Example 2**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a alarmclock in desk.
+Action: go to sidetable 1
+
+State: You arrive at sidetable 1. On the sidetable 1, you see a alarmclock 3, a alarmclock 2, a alarmclock 1, a creditcard 1, a desklamp 1, a keychain 1, a pen 3, a pen 2, and a pencil 3.
+
+**Steps**:
+1. The goal is to put **alarmclock** in **desk**. The alarmclock is not in the desk. Goal not reached, IS_TERMINAL=False. Move to step 2.
+2. We did not pick up the **alarmclock** in the latest state. Move to step 3.
+3. **alarmclock** has been discovered in the latest state. TOTAL_REWARD_FINAL=-0.05.
+
+**Output 2**:
+```plaintext
+TOTAL_REWARD_FINAL=-0.05
+IS_TERMINAL=False
+```
+
+**Example 3**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a alarmclock in desk.
+Action: go to sidetable 1
+
+State: You arrive at loc 20. On the sidetable 1, you see a alarmclock 3, a alarmclock 2, a alarmclock 1, a creditcard 1, a desklamp 1, a keychain 1, a pen 3, a pen 2, and a pencil 3.
+Action: take alarmclock 1 from sidetable 1
+
+State: You pick up the alarmclock 1 from the sidetable 1.
+
+**Steps**:
+1. The goal is to put **alarmclock** in **desk**. The alarmclock is not in the desk. Goal not reached, IS_TERMINAL=False. Move to step 2.
+2. We picked up the **alarmclock** in the latest state. TOTAL_REWARD_FINAL=-0.01.
+
+**Output 1**:
+```plaintext
+TOTAL_REWARD_FINAL=-0.01
+IS_TERMINAL=False
+```
+
+**Example 4**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a alarmclock in desk.
+Action: go to sidetable 1
+
+State: You arrive at loc 20. On the sidetable 1, you see a alarmclock 3, a alarmclock 2, a alarmclock 1, a creditcard 1, a desklamp 1, a keychain 1, a pen 3, a pen 2, and a pencil 3.
+Action: take alarmclock 1 from sidetable 1
+
+State: You pick up the alarmclock 1 from the sidetable 1.
+Action: go to desk 1
+
+State: You arrive at loc 1. On the desk 1, you see a book 2, a bowl 1, a cd 3, a pencil 2, a pencil 1, and a remotecontrol 1.
+
+**Steps**:
+1. The goal is to put **alarmclock** in **desk**. The alarmclock is not in the desk. Goal not reached, IS_TERMINAL=False. Move to step 2.
+2. We picked up the **alarmclock** in a previous state but not the **latest state**. Move to step 3.
+3. **alarmclock** is not discovered in the latest state. TOTAL_REWARD_FINAL=-0.1.
+
+**Output 4**:
+```plaintext
+TOTAL_REWARD_FINAL=-0.1
+IS_TERMINAL=False
+```
+
+**Example 5**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a laundryhamper 1, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a alarmclock in desk.
+Action: go to sidetable 1
+
+State: You arrive at loc 20. On the sidetable 1, you see a alarmclock 3, a alarmclock 2, a alarmclock 1, a creditcard 1, a desklamp 1, a keychain 1, a pen 3, a pen 2, and a pencil 3.
+Action: take alarmclock 1 from sidetable 1
+
+State: You pick up the alarmclock 1 from the sidetable 1.
+Action: go to desk 1
+
+State: You arrive at loc 1. On the desk 1, you see a book 2, a bowl 1, a cd 3, a pencil 2, a pencil 1, and a remotecontrol 1.
+Action: put alarmclock 1 in/on desk 1
+
+State: You put the alarmclock 1 in/on the desk 1.
+
+**Steps**:
+1. The goal is to put **alarmclock** in **desk**. The alarmclock is in the desk. Goal reached, TOTAL_REWARD_FINAL=1, IS_TERMINAL=True.
+
+**Output 5**:
+```plaintext
+TOTAL_REWARD_FINAL=1
+IS_TERMINAL=True
+```
+
+**Example 6**
+State: -= Welcome to TextWorld, ALFRED! =-
+
+You are in the middle of a room. Looking quickly around you, you see a bed 1, a desk 1, a drawer 2, a drawer 1, a garbagecan 1, a shelf 8, a shelf 7, a shelf 6, a shelf 5, a shelf 4, a shelf 3, a shelf 2, a shelf 1, and a sidetable 1.
+
+Your task is to: put a book in bed.
+Action: go to desk 1
+
+State: You arrive at desk 1. On the desk 1, you see a book 1.
+Action: go to bed 1
+
+State: You arrive at bed 1. On the bed 1, you see a laptop 1, a pillow 2, and a pillow 1.
+Action: go to desk 1
+
+State: You arrive at desk 1. On the desk 1, you see a book 1.
+Action: go to desk 1
+
+State: Nothing happens.
+
+**Steps**:
+1. The goal is to put **book** in **bed**. The book is not in the desk. Goal not reached, IS_TERMINAL=False. Move to step 2.
+2. We did not pick up the **book** in the latest state. Move to step 3.
+3. **book** was discovered in a previous state which is not the latest state. TOTAL_REWARD_FINAL=-0.1.
+
+**Output 6**:
+```plaintext
+TOTAL_REWARD_FINAL=-0.1
+IS_TERMINAL=False
+```
+
+# Notes
+- You don't need to concern about the id of the object.
+- Follow the steps closely to compute TOTAL_REWARD_FINAL and IS_TERMINAL.

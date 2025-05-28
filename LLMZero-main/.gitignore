@@ -1,0 +1,14 @@
+**/__pycache__/**
+playground.ipynb
+.env
+venv/
+.pt
+train/tensor_data/expert_state_action_pairs.pt
+environments/alfworld/
+train/dataset/*
+train/models/*.pt
+train/weights/*.pt
+train/elevator_ppo_stats/*.pkl
+train/replay_buffer/*.pkl
+train/training/
+output.log

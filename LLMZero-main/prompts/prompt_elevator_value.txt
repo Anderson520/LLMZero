@@ -1,0 +1,389 @@
+Estimate the value of a given state in an elevator system modeled as a Markov Decision Process (MDP). This involves considering passenger pickups, elevator movement, and specific rewards for the current state.
+
+# Problem Context
+
+The elevator system being modeled involves a 5-floor building. The goal is to move passengers efficiently by estimating the value for each state—taking into account the current settings and potential actions.
+
+### Building Characteristics
+- **Floors**: 5 total, numbered 1 to 5.
+- **Passenger Capacity**:
+  - Floors 2 to 5 can have up to 3 waiting passengers.
+  - The elevator can carry a maximum of 10 passengers.
+
+### Potential Elevator States:
+- **Movement**: It can move **up** or **down**.
+- **Door Positions**: Doors can be **open** or **closed**.
+
+## State Representation
+
+In this scenario, a state will be represented in plain text:
+
+```
+State:
+People waiting at floor 2: [0-3]
+People waiting at floor 3: [0-3]
+People waiting at floor 4: [0-3]
+People waiting at floor 5: [0-3]
+Elevator at floor: [1-5]
+People in the elevator: [0-10]
+Elevator movement: [up/down]
+Elevator door: [open/closed]
+```
+
+# Valid Actions
+
+The valid actions in this system are as follows:
+1. **Nothing**: The elevator does not move, and doors stay unchanged.
+2. **Move**: The elevator moves one floor in its current direction.
+3. **Open**: The elevator doors open.
+4. **Close**: The elevator doors close.
+
+# Reward Calculation
+
+Rewards are calculated using the following formula:
+```
+R(s) = 30 * (total number of people delivered) - 3 * (total number of people waiting at each floor) - 0.75 * (if there are people in the elevator)
+```
+- The **total number of people delivered** is calculated only when the elevator is on the 1st floor.
+- **Total number of people waiting at each floor** is derived from the sum of waiting passengers at floors 2, 3, 4, and 5.
+- **Total number of people in the elevator** is relevant only when the elevator is not on the 1st floor.
+
+# Value Calculation
+
+The **value** of a given state represents the expected total reward from that state onwards, and it can be calculated using the Bellman Equation:
+```
+V(s) = R(s) + gamma * max_a (sum_s' (P(s,a,s') * V(s')))
+```
+- In this task, **gamma** is the discount factor and is set to 1 for simplicity.
+- To simplify calculations, we assume a fixed policy that dictates elevator behavior until the next delivery.
+
+### Elevator Fixed Policy for Movement
+
+1. If moving up, continue until reaching the highest floor with at least one waiting passenger.
+2. Open and close the door at the top-most floor.
+3. Move downwards, picking up passengers as necessary—opening and closing the door for each pickup.
+4. If more passengers are waiting on higher floors while moving downward, continue to floor 1 before considering any other pickups.
+
+# Steps to Calculate Value Estimate
+
+**Variables**:
+- `current_floor`: current elevator floor.
+- `total_waiting`: total number of passengers waiting at every floor.
+- `num_in_elevator`: total number of passengers in the elevator.
+- `is_people_in_elevator`: 1 if there is at least one passenger in the elevator, 0 otherwise.
+- `door_state`: "open" or "closed"
+- `R(s)`: current reward
+- `V(s)`: current value
+
+1. **Initialize Variables**: Initialize the `current_floor`, `total_waiting`, `num_in_elevator`, `is_people_in_elevator` and `door_state` based on the current observed state.
+
+2. **Reward Assignment**: Calculate reward `R(s) = -3 * total_waiting - 0.75 * is_people_in_elevator` and initialize `V(s) = R(s)`.
+
+3. **Handling Upward Movement**:
+    - Skip to step 3 the elevator is not moving up.
+    - Identify the highest floor with at least 1 passenger. If there are no passengers above, skip to step 3.
+    - Calculate number of floors to move, update with `V(s) = V(s) + (number of floors to move) * R(s)`.
+    - Update `current_floor` to the highest relevant floor.
+
+4. **Pick Up Passengers at the Current Floor**:
+    - Skip to step 4 if there are no passengers waiting at `current_floor`.
+    - If the `door_state` is "closed" , **open the door** to let the passengers in. Update `V(S) = V(s) + R(S)`. 
+    - As passengers enter the elevator, update `total_waiting = total_waiting - passengers_on_current_floor`, `num_in_elevator` and `is_people_in_elevator`.
+    - **Close the door**: Recalculate `R(s)` using the new values of `total_waiting` and `is_people_in_elevator` and add to `V(s)`.
+    
+5. **Move Down One Floor**: Update `V(s) = V(s) + R(s)` and update `current_floor`.
+
+6. **Repeat Step 3 and 4 Until Elevator Reaches Floor 1**.
+
+7. **Delivery Reward**:
+    - On floor 1, calculate final reward: `R(s) = 30 * num_in_elevator - 3 * total_waiting - 0.75`.
+    - Update value: `V(s) = V(s) + R(s)`.
+
+# Special Cases
+1. If there are **no passengers** waiting and **no passengers inside** the elevator, return `V(s) = 0`.
+2. If the elevator is on floor 1 and has passengers, return `V(s) = R(s) = 30 * num_in_elevator - 3 * total_waiting - 0.75`.
+
+# Output Format
+Provide the value estimate for the given state in a **single numeric output** indicating the total estimated reward from that state onwards, provide your steps before your output.
+
+# Examples
+
+## Example 1:
+
+### Input State
+```
+State:
+People waiting at floor 2: 2
+People waiting at floor 3: 1
+People waiting at floor 4: 2
+People waiting at floor 5: 0
+Elevator at floor: 4
+People in the elevator: 0
+Elevator movement: up
+Elevator door: closed
+```
+
+### Step-by-Step Calculation for the Given State
+
+### Step 1: Initialize Variables
+
+- **Current Floor**: `current_floor = 2`
+- **Total Waiting Passengers**: `total_waiting = 2 + 0 + 2 + 0 = 4`
+- **Number of People in Elevator**: `num_in_elevator = 0`
+- **Indicator of People in Elevator**: `is_people_in_elevator = 0` (since no one is in the elevator)
+- **Door State**: `door_state = closed`
+
+### Step 2: Reward Assignment
+
+Calculate initial reward `R(s)` using the given formula:
+\[
+R(s) = -3 \times total\_waiting - 0.75 \times is\_people\_in\_elevator = -3 \times 4 - 0.75 \times 0 = -12
+\]
+
+Initialize value for the state:
+\[
+V(s) = R(s) = -12
+\]
+
+### Step 3: Handling Upward Movement
+
+The elevator is moving up, so we find the highest floor with waiting passengers.
+
+- The highest waiting floor is 4 with 2 passengers.
+
+#### Move from Floor 2 to Floor 4
+- The elevator is moving 2 floors up from floor 2 to floor 4.
+
+- Update the value for these moves:
+  \[
+  V(s) = V(s) + 2 \times R(s) = -12 + 2 \times (-12) = -36
+  \]
+
+Update `current_floor` to 4.
+
+### Step 4: Pick Up Passengers at the Current Floor (Floor 4)
+
+- At `current_floor = 4`, 2 passengers are waiting.
+
+- **Open the door**: 
+  - Reward for opening: `R(s) = -12`
+  - Update value: `V(s) = -36 + (-12) = -48`
+
+- Allow passengers to enter the elevator:
+  - Update: `total_waiting = 4 - 2 = 2`
+  - `num_in_elevator = 0 + 2 = 2`
+  - `is_people_in_elevator = 1` (since we now have passengers)
+
+- **Close the door**: 
+  - Recalculate `R(s)` using the new values:
+  \[
+  R(s) = -3 \times 2 - 0.75 \times 1 = -6.75
+  \]
+  - Update value: `V(s) = -48 + (-6.75) = -54.75`
+
+### Step 5: Move Down
+
+#### Move to Floor 3
+- Update `current_floor = 3`
+- Update the value for moving down a floor:
+  \[
+  V(s) = -54.75 + (-6.75) = -61.5
+  \]
+
+- There are no passengers waiting at floor 3.
+
+#### Move to Floor 2
+- Update `current_floor = 2`
+- Update the value:
+  \[
+  V(s) = -61.5 + (-6.75) = -68.25
+  \]
+
+- There are 2 passengers waiting at floor 2.
+
+- **Open the door** to load 2 passengers:
+  - Reward for opening: `R(s) = -6.75`
+  - Update value: `V(s) = -68.25 + (-6.75) = -75`
+
+- Passengers enter:
+  - Update `total_waiting = 2 - 2 = 0`
+  - `num_in_elevator = 2 + 2 = 4`
+
+- **Close the door**: 
+  - Recalculate `R(s)`:
+  \[
+  R(s) = -3 \times 0 - 0.75 \times 1 = -0.75
+  \]
+  - Update `V(s) = -75 + (-0.75) = -75.75`
+
+### Step 6: Move Down to Floor 1
+
+- Update `current_floor = 1`
+- Update the value for moving to the first floor:
+  \[
+  V(s) = -75.75 + (-0.75) = -76.5
+  \]
+
+### Step 7: Delivery Reward at Floor 1
+
+When passengers reach the first floor, deliver them:
+
+- Final delivery reward `R(s)`:
+  \[
+  R(s) = 30 \times 4 - 3 \times 0 - 0.75 = 120 - 0.75 = 119.25
+  \]
+
+- Final value update:
+  \[
+  V(s) = -76.5 + 119.25 = 42.75
+  \]
+
+### Final Value Estimate
+
+Thus, the value estimate for the given state is:
+\[
+\boxed{42.75}
+\]
+
+## Example 2:
+
+### Input State
+```
+State:
+People waiting at floor 2: 2
+People waiting at floor 3: 1
+People waiting at floor 4: 2
+People waiting at floor 5: 0
+Elevator at floor: 4
+People in the elevator: 0
+Elevator movement: up
+Elevator door: closed
+```
+### Step-by-Step Calculation:
+
+### Step 1: Initialize Variables
+
+- **Current Floor**: `current_floor = 4`
+- **Total Waiting Passengers**: `total_waiting = 2 + 1 + 2 + 0 = 5`
+- **Number of People in Elevator**: `num_in_elevator = 0`
+- **Indicator of People in Elevator**: `is_people_in_elevator = 0` (since no one is in the elevator)
+- **Door State**: `door_state = closed`
+
+### Step 2: Reward Assignment
+
+Calculate initial reward `R(s)` using the given formula:
+\[
+R(s) = -3 \times 5 - 0.75 \times 0 = -15
+\]
+
+Initialize value for the state:
+\[
+V(s) = R(s) = -15
+\]
+
+### Step 3: Handling Upward Movement
+
+Since the elevator is moving up, we find the highest floor with waiting passengers. 
+
+- The current highest waiting floor is 4 (itself) with 2 passengers.
+
+Since we are on this floor already, we do not need to move further up (no change in value for movement). Thus, proceed to handle passenger pick-up at the current level.
+
+### Step 4: Pick Up Passengers at the Current Floor
+
+- At `current_floor = 4`, 2 passengers are waiting.
+
+- As `door_state = closed`, **open the door**:
+  - Reward for opening: `R(s) = -15`
+  - Update value: `V(s) = -15 + (-15) = -30`
+
+- Allow passengers to enter the elevator:
+  - Update: `total_waiting = 5 - 2 = 3`
+  - `num_in_elevator = 0 + 2 = 2`
+  - `is_people_in_elevator = 1` (since now there are passengers inside)
+
+- **Close the door** after passengers enter:
+  - Update reward using new totals:
+  \[
+  R(s) = -3 \times 3 - 0.75 \times 1 = -9.75
+  \]
+  - Update value: `V(s) = -30 + (-9.75) = -39.75`
+
+### Step 5: Move Down
+
+#### Move to Floor 3
+- Update `current_floor = 3`
+- Update the value for moving down a floor:
+  \[
+  V(s) = -39.75 + (-9.75) = -49.5
+  \]
+
+- There is 1 passenger at floor 3.
+
+- **Open the door** to load the passenger:
+  - Reward for opening: `R(s) = -9.75`
+  - Update value: `V(s) = -49.5 + (-9.75) = -59.25`
+
+- Passengers enter:
+  - Update `total_waiting = 3 - 1 = 2`
+  - `num_in_elevator = 2 + 1 = 3`
+
+- **Close the door**: 
+  - Recalculate `R(s)`:
+  \[
+  R(s) = -3 \times 2 - 0.75 \times 1 = -6.75
+  \]
+  - Update `V(s) = -59.25 + (-6.75) = -66`
+
+#### Move to Floor 2
+- Update `current_floor = 2`
+- Update the value:
+  \[
+  V(s) = -66 + (-6.75) = -72.75
+  \]
+
+- There are 2 passengers waiting at floor 2.
+
+- **Open the door** to load 2 passengers:
+  - Reward for opening: `R(s) = -6.75`
+  - Update value: `V(s) = -72.75 + (-6.75) = -79.5`
+
+- Passengers enter:
+  - Update `total_waiting = 2 - 2 = 0`
+  - `num_in_elevator = 3 + 2 = 5`
+
+- **Close the door**: 
+  - Recalculate `R(s)`:
+  \[
+  R(s) = -3 \times 0 - 0.75 \times 1 = -0.75
+  \]
+  - Update `V(s) = -79.5 + (-0.75) = -80.25`
+
+### Step 6: Move Down to Floor 1
+
+- Update `current_floor = 1`
+- Update the value for moving to the first floor:
+  \[
+  V(s) = -80.25 + (-0.75) = -81
+  \]
+
+### Step 7: Delivery Reward at Floor 1
+
+When passengers reach the first floor, deliver them:
+
+- Final delivery reward `R(s)`:
+  \[
+  R(s) = 30 \times 5 - 3 \times 0 - 0.75 = 150 - 0.75 = 149.25
+  \]
+
+- Final value update:
+  \[
+  V(s) = -81 + 149.25 = 68.25
+  \]
+
+### Final Value Estimate
+
+Thus, the value estimate for the given state is:
+\[
+\boxed{68.25}
+\]

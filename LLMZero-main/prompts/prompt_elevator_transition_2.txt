@@ -1,0 +1,300 @@
+
+Provide a sample next state of an elevator system modeled as an MDP (Markov Decision Process) based on a given action. The system involves managing passenger pickups and elevator movement inside a building.
+
+# State Representation
+
+In this building, there are 5 floors, numbered 1 to 5. Some characteristics of the building elevator system include:
+
+- Floors 2 to 5 may have up to 3 passengers waiting at any given time.
+- The elevator can carry up to 10 passengers.
+- The elevator can either move up or down, and the elevator doors can either be open or closed.
+
+The state will be represented in plain text as follows:
+**State**:
+People waiting at floor 2: (0-3)
+People waiting at floor 3: (0-3)
+People waiting at floor 4: (0-3)
+People waiting at floor 5: (0-3)
+Elevator at floor (1-5)
+There are (0-10) people in the elevator.
+Elevator is moving (up/down).
+Elevator door is (open/closed).
+
+# Valid Actions
+
+The valid actions are:
+1. **nothing**: The elevator not move, open, or close its doors.
+2. **move**: The elevator attempts to move one floor in the current direction.
+3. **open**: The elevator opens its door.
+4. **close**: The elevator closes its door.
+
+# Transition Rules
+
+1. **Passenger Boarding Rules**:  
+   - If the elevator door is open and passengers are waiting on that floor, they will enter the elevator, subject to capacity.
+   - If capacity is reached, any remaining passengers will leave by taking the stairs.
+
+2. **Passenger Exit Rule**:
+   - If the elevator is at floor 1, all passengers will exit the elevator regardless if the door is open or not.
+
+3. **Elevator Direction Adjustment**:  
+   - The elevator changes direction when at the limits:
+     - At floor 1, the direction changes from down to up.
+     - At floor 5, the direction changes from up to down.
+
+4. **Elevator Movement**:
+   - The elevator can only move while the door is closed.
+   - The elevator can only move to a valid floor. The elevator cannot move up on floor 5 or move down on floor 1. The elevator will remain on the same floor if it tries to move to an invalid floor.
+   - The elevator will only move if the action is "move".
+   - If all 3 conditions are met, the elevator will move 1 floor in the current direction.
+
+5. **Opening/Closing the Door**:
+   - If the action is "open", the elevator door will open, and the direction will be changed to down.
+   - If the action is "close", the elevator door will close, other features of the state are unaffected.
+
+# Steps to Determine Next State
+
+1. Check if rule 1, the **Passenger Boarding Rules** applies to the current state, then apply the appropriate effects.
+2. Repeat step 1 for each of the rules in order.
+
+# Output Format
+
+Provide your reasoning, then predict the next state. The reasoning should be following the steps above and concise. The output state should be represented in the following text format:
+
+```plaintext
+Next state:
+People waiting at floor 2: [number]
+People waiting at floor 3: [number]
+People waiting at floor 4: [number]
+People waiting at floor 5: [number]
+Elevator at floor [number].
+There are [number] people in the elevator.
+Elevator is moving [direction].
+Elevator door is [state].
+```
+
+# Examples
+
+### Example 1 
+**Current State**:  
+People waiting at floor 2: 0  
+People waiting at floor 3: 0  
+People waiting at floor 4: 1  
+People waiting at floor 5: 0  
+Elevator at floor 1.  
+There are 0 people in the elevator.  
+Elevator is moving up.  
+Elevator door is closed.  
+
+**Action**: move  
+
+**Reasoning**:
+1. **Passenger Boarding Rules**: Does not apply because the elevator door is closed. 
+2. **Passenger Exit Rule**: Does not apply because there are no one inside the elevator.
+3. **Elevator Direction Adjustment**: The elevator is at floor 1 but is moving up. No changes needed.
+4. **Elevator Movement**: The elevator is at floor 1 and moving up, the door is closed and the action is "move". All conditions are satisfied and the elevator will move to floor 2.
+5. **Opening/closing of the door**: Does not apply because action is neither "open" or "close". 
+
+```plaintext
+Next State: 
+People waiting at floor 2: 0
+People waiting at floor 3: 0
+People waiting at floor 4: 1  
+People waiting at floor 5: 0
+Elevator at floor 2.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+```
+
+### Example 2
+**Current State**:
+People waiting at floor 2: 1
+People waiting at floor 3: 3
+People waiting at floor 4: 0
+People waiting at floor 5: 2
+Elevator at floor 2.
+There are 1 people in the elevator.
+Elevator is moving down.
+Elevator door is closed.
+
+**Action**: nothing
+
+**Reasoning**:
+1. **Passenger Boarding Rules**: Does not apply because the elevator door is closed. 
+2. **Passenger Exit Rule**: Does not apply because the elevator is not at floor 1.
+3. **Elevator Direction Adjustment**: Does not apply because the elevator is neither at floor 1 or floor 5.
+4. **Elevator Movement**: Does not apply because the action is not "move"
+5. **Opening/closing of the door**: Does not apply because action is neither "open" or "close".
+
+```plaintext
+Next State: 
+People waiting at floor 2: 1
+People waiting at floor 3: 3
+People waiting at floor 4: 0
+People waiting at floor 5: 2
+Elevator at floor 2.
+There are 1 people in the elevator.
+Elevator is moving down.
+Elevator door is closed.
+```
+
+### Example 3
+**Current State**:
+People waiting at floor 2: 1
+People waiting at floor 3: 3
+People waiting at floor 4: 3
+People waiting at floor 5: 2
+Elevator at floor 2.
+There are 1 people in the elevator.
+Elevator is moving down.
+Elevator door is open.
+
+**Action**: move
+
+**Reasoning**:
+1. **Passenger Boarding Rules**: The door is open. The elevator is at floor 2 and there is 1 passenger waiting. The passengers enter the elevator since there is enough space inside.
+2. **Passenger Exit Rule**: Does not apply because the elevator is not at floor 1.
+3. **Elevator Direction Adjustment**: Does not apply because the elevator is neither at floor 1 or floor 5.
+4. **Elevator Movement**: The elevator door is open. Therefore "move" is invalid since it does not satisfy the pre-condition.
+5. **Opening/closing of the door**: Does not apply because action is neither "open" or "close".
+
+```plaintext
+Next State: 
+People waiting at floor 2: 0
+People waiting at floor 3: 3
+People waiting at floor 4: 3
+People waiting at floor 5: 2
+Elevator at floor 2.
+There are 1 people in the elevator.
+Elevator is moving down.
+Elevator door is open.
+```
+
+### Example 4
+**Current State**:
+People waiting at floor 2: 1
+People waiting at floor 3: 3
+People waiting at floor 4: 3
+People waiting at floor 5: 2
+Elevator at floor 4.
+There are 0 people in the elevator.
+Elevator is moving down.
+Elevator door is open.
+
+**Action**: close
+
+**Reasoning**:
+1. **Passenger Boarding Rules**: The door is open. The elevator is at floor 4 and there are 3 passengers waiting. The passengers enter the elevator since there is enough space inside.
+2. **Passenger Exit Rule**: Does not apply because the elevator is not at floor 1.
+3. **Elevator Direction Adjustment**: Does not apply because the elevator is neither at floor 1 or floor 5.
+4. **Elevator Movement**: Does not apply because the action is not "move".
+5. **Opening/closing of the door**: Action is "close". The door will be closed on the next state.
+
+```plaintext
+Next State: 
+People waiting at floor 2: 1
+People waiting at floor 3: 3
+People waiting at floor 4: 0
+People waiting at floor 5: 2
+Elevator at floor 4.
+There are 3 people in the elevator.
+Elevator is moving down.
+Elevator door is closed.
+```
+
+### Example 5
+**Current State**:
+People waiting at floor 2: 1
+People waiting at floor 3: 3
+People waiting at floor 4: 0
+People waiting at floor 5: 3
+Elevator at floor 3.
+There are 8 people in the elevator.
+Elevator is moving down.
+Elevator door is open.
+
+**Action**: close
+
+**Reasoning**:
+1. **Passenger Boarding Rules**: The door is open. The elevator is at floor 3 and there are 3 passengers waiting. 2 of the passengers enter the elevator and 1 left to take the stairs because the elevator is full.
+2. **Passenger Exit Rule**: Does not apply because the elevator is not at floor 1.
+3. **Elevator Direction Adjustment**: Does not apply because the elevator is neither at floor 1 or floor 5.
+4. **Elevator Movement**: Does not apply because the action is not "move".
+5. **Opening/closing of the door**: Action is "close". The door will be closed on the next state.
+
+```plaintext
+Next State: 
+People waiting at floor 2: 1
+People waiting at floor 3: 0
+People waiting at floor 4: 0
+People waiting at floor 5: 3
+Elevator at floor 3.
+There are 10 people in the elevator.
+Elevator is moving down.
+Elevator door is closed.
+```
+
+### Example 6
+**Current State**:
+People waiting at floor 2: 0
+People waiting at floor 3: 0
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 1.
+There are 4 people in the elevator.
+Elevator is moving down.
+Elevator door is closed.
+
+**Action**: move
+
+**Reasoning**:
+1. **Passenger Boarding Rules**: Does not apply because the elevator is at floor 1.
+2. **Passenger Exit Rule**: Elevator is at floor 1. All passengers leaves.
+3. **Elevator Direction Adjustment**: The elevator is at floor 1 and moving down. The direction will be changed to "up".
+4. **Elevator Movement**: The elevator is at floor 1 and moving down. The "move" action is invalid and the elevator will remain on floor 1.
+5. **Opening/closing of the door**: Does not apply because action is neither "open" or "close".
+
+```plaintext
+Next State:
+People waiting at floor 2: 0
+People waiting at floor 3: 0
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 1.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+```
+
+### Example 7
+**Current State**:
+People waiting at floor 2: 0
+People waiting at floor 3: 1
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 3.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+
+**Action**: open
+
+**Reasoning**:
+1. **Passenger Boarding Rules**: Does not apply because the elevator door is closed.
+2. **Passenger Exit Rule**: Does not apply because the elevator is not at floor 1.
+3. **Elevator Direction Adjustment**: Does not apply because the elevator is neither at floor 1 or floor 5.
+4. **Elevator Movement**: Does not apply because the action is not "move".
+5. **Opening/closing of the door**: The action is "open" and the door is currently closed. The door will be open and the direction will be down.
+
+```plaintext
+Next State:
+People waiting at floor 2: 0
+People waiting at floor 3: 1
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 3.
+There are 0 people in the elevator.
+Elevator is moving down.
+Elevator door is open.
+```

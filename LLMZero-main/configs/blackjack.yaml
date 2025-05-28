@@ -1,0 +1,27 @@
+llm_policy:
+  env_params: 
+    system_prompt_path: "prompts/prompt_blackjack_policy.txt"
+    extract_action_regex: "optimal action: (.*)"
+
+  temp: 1.0
+
+llm_mcts:
+  llm_policy:
+    env_params: 
+      system_prompt_path: "prompts/prompt_blackjack_policy.txt"
+      extract_action_regex: "optimal action: (.*)"
+
+  temp: 10.0
+
+  mcts_args:
+    num_simulations: 100
+    c_puct: 1
+    gamma: 1.0
+    max_depth: 20
+
+mcts_expert:
+  mcts_args:
+    num_simulations: 100
+    c_puct: 100
+    gamma: 0.95
+    max_depth: 24

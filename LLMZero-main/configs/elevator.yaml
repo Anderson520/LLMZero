@@ -1,0 +1,44 @@
+llm_policy:
+  env_params: 
+    system_prompt_path: "prompts/prompt_elevator_policy.txt"
+    extract_action_regex: "optimal action: (.*)"
+  load_prompt_buffer_path: "prompt_buffer/elevator_policy.pkl"
+  save_buffer_interval: 1
+  temp: 1.0
+
+llm_mcts:
+  llm_policy:
+    env_params: 
+      system_prompt_path: "prompts/prompt_elevator_policy.txt"
+      extract_action_regex: "optimal action: (.*)"
+    load_prompt_buffer_path: "prompt_buffer/elevator_policy_mcts.pkl" # update this path to the path of the saved prompt buffer
+    prompt_buffer_prefix: "prompt_buffer/elevator"
+    save_buffer_interval: 100
+
+  temp: 10.0
+
+  mcts_args:
+    num_simulations: 50
+    c_puct: 100
+    gamma: 0.99
+    max_depth: 100
+    num_rollouts: 1
+
+mcts_expert:
+  mcts_args:
+    num_simulations: 100
+    c_puct: 100
+    gamma: 0.95
+    max_depth: 24
+
+nn_agent:
+  encoder_name: sentence-transformers/all-mpnet-base-v2
+  network_type: actor_critic
+  network_params:
+    num_transformer_layers_shared: 0
+    num_transformer_layers_actor: 1
+    num_transformer_layers_critic: 1
+    fc_hidden_dims: [512, 256]
+    action_space_n: 4
+    device: cuda
+  model_path: weights/elevator_ppo_Iteration_1552.pt

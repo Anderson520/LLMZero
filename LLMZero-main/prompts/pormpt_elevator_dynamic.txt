@@ -1,0 +1,364 @@
+Given an action, return a sample of a possible next states in this MDP modeling an elevator sending passengers in a building.
+
+**State Representation**
+In this building, there are 5 floors, floor 2 to 5 may have up to 3 passengers waiting. The elevator can carry up to 10 passengers. The elevator can either move up or down, and the elevator door is either open or close. Therefore, the state can be represented in 
+plain text as:
+**State**:
+People waiting at floor 2: (0-3)  
+People waiting at floor 3: (0-3)   
+People waiting at floor 4: (0-3)  
+People waiting at floor 5: (0-3)   
+Elevator at floor (1-5)  
+There are (0-10) people in the elevator.  
+Elevator is moving (up/down). 
+Elevator door is (open/closed).
+
+**Valid actions**
+The valid actions are:
+1. **nothing**. Indicating no operation.
+2. **move**. The elevator will attempt to move 1 floor in the current direction.
+3. **open**. The elevator will open the door.
+"" **close**. The elevator will close the door.
+
+**Transitions**
+1. Regardless of the elevator's action, for any floor between 2 to 5, there is a 10% chance of 1 new passenger arriving if the floor has 2 or less passengers waiting and a 1% chance of 2 new passengers arriving if the floor has 1 or less passengers waiting.
+
+Example 1:
+State:
+People waiting at floor 2: 0
+People waiting at floor 3: 0
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 1.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+
+Action: nothing
+
+Next state:
+People waiting at floor 2: 0
+People waiting at floor 3: 0
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 1.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+
+Explanation:
+In this case, which is one of the majority cases with probability of 0.9^4, no new passengers arrived on any floors.
+
+Example 2:
+State:
+People waiting at floor 2: 0
+People waiting at floor 3: 0
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 1.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+
+Action: nothing
+
+Next state:
+People waiting at floor 2: 0
+People waiting at floor 3: 1
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 1.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+
+Explanation:
+One new passengers arrived on floor 3 in this case, which is also quite common.
+
+2. Regardless of the elevator's action, if the elevator door is *already open* and there are passengers waiting on that floor, the passengers will enter the elevator if there are enough capacity. If the elevator is full, the remaining passengers will not continue waiting and take the stairs instead.
+
+Example 1:
+State:
+People waiting at floor 2: 1
+People waiting at floor 3: 3
+People waiting at floor 4: 3
+People waiting at floor 5: 2
+Elevator at floor 2.
+There are 0 people in the elevator.
+Elevator is moving down.
+Elevator door is open.
+
+Action: nothing
+
+Next state:
+People waiting at floor 2: 0
+People waiting at floor 3: 1
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 2.
+There are 1 people in the elevator.
+Elevator is moving down.
+Elevator door is closed.
+
+Explanation:
+The 1 passenger waiting at floor 2 entered the elevator with 0 passengers. The elevator now has 1 passenger.
+
+Example 2:
+State:
+People waiting at floor 2: 1
+People waiting at floor 3: 3
+People waiting at floor 4: 0
+People waiting at floor 5: 3
+Elevator at floor 3.
+There are 8 people in the elevator.
+Elevator is moving down.
+Elevator door is open.
+
+Action: nothing
+
+Next state:
+People waiting at floor 2: 1
+People waiting at floor 3: 0
+People waiting at floor 4: 0
+People waiting at floor 5: 3
+Elevator at floor 3.
+There are 10 people in the elevator.
+Elevator is moving down.
+Elevator door is open.
+
+Explanation:
+The 2 of the passengers on floor 3 entered the elevator and it is now full. The last passenger took the stairs.
+
+3. Regardless of the elevator's action, if the elevator is currently at floor 1 and the direction is down, the elevator will change direction to move up. Vice versa, if the elevator is at floor 5 and the direction is up, the elevator will change direction to down. Furthermore, in these 2 scenarios, the "move" command will be invalid and have no effect.
+
+Example:
+State:
+People waiting at floor 2: 1
+People waiting at floor 3: 3
+People waiting at floor 4: 0
+People waiting at floor 5: 3
+Elevator at floor 1.
+There are 0 people in the elevator.
+Elevator is moving down.
+Elevator door is closed.
+
+Action: move
+
+Next state:
+People waiting at floor 2: 1
+People waiting at floor 3: 0
+People waiting at floor 4: 1
+People waiting at floor 5: 3
+Elevator at floor 1.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+
+Explanation:
+The direction is automatically changed to up and the action "move" in this case has no effect on the state. In addition, 1 new passengers randomly arrived on floor 4.
+
+3. Regardless of the elevator's action, if the elevator is currently at floor 1 and the direction is down, the elevator will change direction to move up. Vice versa, if the elevator is at floor 5 and the direction is up, the elevator will change direction to down. Furthermore, in these 2 scenarios, the "move" command will be invalid and have no effect.
+
+Example:
+State:
+People waiting at floor 2: 1
+People waiting at floor 3: 3
+People waiting at floor 4: 0
+People waiting at floor 5: 3
+Elevator at floor 1.
+There are 0 people in the elevator.
+Elevator is moving down.
+Elevator door is closed.
+
+Action: move
+
+Next state:
+People waiting at floor 2: 1
+People waiting at floor 3: 0
+People waiting at floor 4: 1
+People waiting at floor 5: 3
+Elevator at floor 1.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+
+Explanation:
+The direction is automatically changed to up and the action "move" in this case has no effect on the state. In addition, 1 new passengers randomly arrived on floor 4.
+
+3. The action "move" will also have no effect if the elevator door is open. Otherwise, it will move the elevator 1 floor in the current direction.
+
+Example 1:
+State:
+People waiting at floor 2: 0
+People waiting at floor 3: 0
+People waiting at floor 4: 0
+People waiting at floor 5: 0
+Elevator at floor 1.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+
+Action: move
+
+Next state:
+People waiting at floor 2: 0
+People waiting at floor 3: 1
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 2.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is closed.
+
+Explanation:
+The elevator moved up from floor 1 to floor 2. In addition, 1 new passenger randomly arrived on both floor 3 and 4.
+
+Example 2:
+State:
+People waiting at floor 2: 0
+People waiting at floor 3: 1
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 2.
+There are 0 people in the elevator.
+Elevator is moving down.
+Elevator door is open.
+
+Action: move
+
+Next state:
+People waiting at floor 2: 0
+People waiting at floor 3: 1
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 2.
+There are 0 people in the elevator.
+Elevator is moving down.
+Elevator door is open.
+
+Explanation:
+The elevator did not move because the door is open. No new passengers arrived in this case.
+
+4. If "open" is executed, the elevator door will open and the direction of the elevator will be forced to be "down". 
+
+Example:
+State:
+People waiting at floor 2: 0
+People waiting at floor 3: 1
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 3.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is open.
+
+Action: move
+
+Next state:
+People waiting at floor 2: 0
+People waiting at floor 3: 1
+People waiting at floor 4: 1
+People waiting at floor 5: 0
+Elevator at floor 2.
+There are 0 people in the elevator.
+Elevator is moving up.
+Elevator door is open.
+
+Explanation:
+The elevator did not move because the door is open. No new passengers arrived in this case.
+
+
+# Steps
+
+1. **Assess the Current State**:
+   - Check if the elevator is moving up or down.
+   - Determine if the door is open or closed.
+   - Evaluate the number of passengers on each floor and the number in the elevator.
+
+2. **Determine Valid Actions**:
+   - Analyze the possible actions based on the state, such as moving, opening/closing the door, or waiting.
+   
+3. **Decide on Optimal Action**:
+   - Base the decision on efficiency toward reaching the goal of ferrying passengers from upper floors to the first floor.
+   - Consider maximizing elevator capacity usage while following the movement and direction rules.
+
+# Output Format
+
+Provide the optimal action in the following format, given the current state of the elevator:
+
+```plaintext
+Optimal action: [action]
+```
+
+Where the action is one of:
+- `nothing`
+- `move`
+- `open door`
+- `close door`
+
+# Examples
+
+**Example 1**  
+**State**:  
+People waiting at floor 2: 0  
+People waiting at floor 3: 0  
+People waiting at floor 4: 1  
+People waiting at floor 5: 0  
+Elevator at floor 2.  
+There are 0 people in the elevator.  
+Elevator is moving down.  
+Elevator door is open.  
+
+**Reasoning**:  
+- The goal is to pick up passengers if possible to maximize efficiency.
+- Since there is no one waiting on floor 2, the optimal action is to `close door` to proceed with movement.
+
+**Output**:  
+```plaintext
+Optimal action: close door
+```
+
+**Example 2**  
+**State**:  
+People waiting at floor 2: 0  
+People waiting at floor 3: 3  
+People waiting at floor 4: 0  
+People waiting at floor 5: 2  
+Elevator at floor 5.  
+There are 3 people in the elevator.  
+Elevator is moving down.  
+Elevator door is closed.  
+
+**Reasoning**:  
+- The elevator is at the top floor and moving down, and since the door is closed, the optimal action is to `open door` to pick up more passengers.
+
+**Output**:  
+```plaintext
+Optimal action: open door
+```  
+
+**Example 3**  
+**State**:  
+People waiting at floor 2: 0  
+People waiting at floor 3: 3 
+People waiting at floor 4: 0  
+People waiting at floor 5: 1  
+Elevator at floor 3.  
+There are 0 people in the elevator.  
+Elevator is moving up.  
+Elevator door is closed.  
+
+**Reasoning**:  
+- The elevator is at floor 3 and is moving up. There 3 people waiting at floor 3 and 1 people waiting at floor 5. The optimal strategy is to move up to pick up the passenger at floor 5 first and the pick up the passenger at floor 3 later on the way down.
+
+**Output**:  
+```plaintext
+Optimal action: move
+```  
+
+# Notes
+
+- Always prioritize picking up passengers on the higher floors if there is space in the elevator to improve round trip efficiency.
+- Ensure that the elevator adheres to direction rules: it can only change direction at the top or bottom floor or when picking passengers up while moving up.
+- Movement is prohibited if the door is open, focus on closing it before initiating movement.
+- It is more advantageous for the elevator to be at the higher floors in general to be ready to pick up passengers.

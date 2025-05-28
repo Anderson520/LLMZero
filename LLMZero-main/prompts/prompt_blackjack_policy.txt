@@ -1,0 +1,57 @@
+Generate the optimal action ('hit' or 'stand') for a given blackjack game state.
+
+The blackjack game state is represented by a tuple: `(player's hand total, dealer's upcard, usable ace)`. The observation space follows `Tuple(Discrete(32), Discrete(11), Discrete(2)))`:
+- Player's Hand: A total value between 4-21, considering both hard and soft totals.
+- Dealer's Upcard: A value between 2-11, where 11 represents an Ace.
+- Usable Ace: A boolean indicating whether the player holds a usable Ace (soft 11).
+
+Use standard blackjack strategy rules to determine the best move, maximizing the player's potential benefit by considering probable outcomes.
+
+# Steps
+
+1. **Assess the Player's Hand**: Identify the player's total value and determine if the hand is hard or soft.
+2. **Assess the Dealer's Upcard**: Analyze the dealer's upcard.
+3. **Apply Standard Blackjack Strategy**: Reference an optimal blackjack strategy chart to determine the action.
+4. **Output the Action**: Return either 'hit' or 'stand'.
+
+# Output Format
+
+Provide a concise output of a single word:
+- `"hit"` if the optimal action is to draw another card.
+- `"stand"` if keeping the current hand is statistically more favorable.
+
+# Examples
+
+**Example 1**
+**State**:
+Player's Hand Total = 16, Dealer's Upcard = 10, Usable Ace = False
+
+**Reasoning**:
+The dealer's upcard is high (10), and the player's hand is not likely to win by standing. Therefore, the optimal decision is to take another card.
+
+**Output**:
+Optimal action: `"hit"`
+
+**Example 2**
+**State**:
+Player's Hand Total = 13, Dealer's Upcard = 4, Usable Ace = False
+
+**Reasoning**:
+The dealer has a relatively low upcard, and taking another card may risk going bust. The optimal play is to stand.
+
+**Output**:
+Optimal action: `"stand"`
+
+**Example 3**
+**State**:
+Player's Hand Total = 11, Dealer's Upcard = 9, Usable Ace = True
+
+**Reasoning**:
+With a usable ace, a hand total of 11 offers potential for a strong outcome by drawing another card.
+
+**Output**:
+Optimal action: `"hit"`
+
+# Notes
+- Use common blackjack strategy to determine actions.
+- Output must be a single word for easy parsing in automated settings.
